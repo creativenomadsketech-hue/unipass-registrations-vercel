@@ -25,6 +25,7 @@ export default function ConfirmAttendance() {
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -47,15 +48,21 @@ export default function ConfirmAttendance() {
   };
 
   const handleConfirmAttendance = async (attendee: Attendee) => {
+    setConfirmingId(attendee.id);
     try {
       const confirmedAttendee = await confirmAttendance(attendee.id);
       setSelectedAttendee(confirmedAttendee);
-      await logAction('attendance_confirmed', { 
-        attendeeId: attendee.id, 
-        attendeeName: attendee.fullName 
+      setSearchResults(prev => prev.map(a =>
+        a.id === attendee.id ? { ...a, status: 'confirmed' as const } : a
+      ));
+      await logAction('attendance_confirmed', {
+        attendeeId: attendee.id,
+        attendeeName: attendee.fullName
       });
     } catch (error) {
       console.error('Confirmation failed:', error);
+    } finally {
+      setConfirmingId(null);
     }
   };
 
@@ -170,12 +177,17 @@ export default function ConfirmAttendance() {
                     {attendee.status === 'pending' ? (
                       <button
                         onClick={() => handleConfirmAttendance(attendee)}
-                        className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform active:scale-95 text-sm sm:text-base"
+                        disabled={confirmingId === attendee.id}
+                        className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform active:scale-95 text-sm sm:text-base"
                       >
                         <span className="flex items-center justify-center">
                           <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                          <span className="hidden sm:inline">Confirm Attendance</span>
-                          <span className="sm:hidden">Confirm</span>
+                          {confirmingId === attendee.id ? 'Confirming...' : (
+                            <>
+                              <span className="hidden sm:inline">Confirm Attendance</span>
+                              <span className="sm:hidden">Confirm</span>
+                            </>
+                          )}
                         </span>
                       </button>
                     ) : (

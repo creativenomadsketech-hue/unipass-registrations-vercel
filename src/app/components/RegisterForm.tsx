@@ -99,7 +99,7 @@ export default function RegisterForm() {
           Event <span className="text-orange-500">Registration</span>
         </h2>
         <p className="text-sm sm:text-base lg:text-xl text-gray-700">
-          Join us for the 2026 STUDY IN AUSTRALIA OPEN DAY 🇦🇺 
+          {process.env.NEXT_PUBLIC_EVENT_TAGLINE}
         </p>
       </div>
 
