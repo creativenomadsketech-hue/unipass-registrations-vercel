@@ -61,14 +61,13 @@ class GoogleSheetsService {
         console.log('Search results:', data.results?.length || 0, 'results found');
         return data.results || [];
       } else {
-        console.error('Google Sheets API error:', response.status, response.statusText);
         const errorData = await response.json();
-        console.error('Error details:', errorData);
-        throw new Error(`API error: ${response.status}`);
+        console.error('Google Sheets API error:', response.status, response.statusText, errorData);
+        throw new Error(`API error ${response.status}: ${errorData.details || errorData.error || response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to search Google Sheets:', error);
-      throw new Error('Failed to search attendees. Please try again.');
+      throw error;
     }
   }
 
