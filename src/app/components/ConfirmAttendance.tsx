@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, User, Mail, Phone, CheckCircle, UserPlus } from 'lucide-react';
 import { searchAttendees, confirmAttendance, logAction } from '../services/googleSheets';
 
@@ -26,25 +26,79 @@ export default function ConfirmAttendance() {
   const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Attendee[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
-    
-    console.log('Starting search for:', searchTerm);
+  // Debounce: fetch suggestions as user types
+  useEffect(() => {
+    if (!searchTerm.trim() || searchTerm.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsFetchingSuggestions(true);
+      try {
+        const results = await searchAttendees(searchTerm);
+        setSuggestions(results.slice(0, 6));
+        setShowSuggestions(results.length > 0);
+      } catch {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsFetchingSuggestions(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearch = async (term?: string) => {
+    const query = term ?? searchTerm;
+    if (!query.trim()) return;
+
+    setShowSuggestions(false);
+    setSuggestions([]);
+    console.log('Starting search for:', query);
     setIsSearching(true);
     setHasSearched(true);
     setSearchError(null);
     try {
-      const results = await searchAttendees(searchTerm);
+      const results = await searchAttendees(query);
       console.log('Search results received:', results);
       setSearchResults(results);
-      await logAction('search', { searchTerm, resultCount: results.length });
+      await logAction('search', { searchTerm: query, resultCount: results.length });
     } catch (error) {
       console.error('Search failed:', error);
       setSearchError(error instanceof Error ? error.message : 'Search failed. Please try again.');
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleSelectSuggestion = (attendee: Attendee) => {
+    setSearchTerm(attendee.fullName);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    handleSearch(attendee.fullName);
   };
 
   const handleConfirmAttendance = async (attendee: Attendee) => {
@@ -85,6 +139,7 @@ export default function ConfirmAttendance() {
               <div className="relative">
                 <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition-colors duration-300" />
                 <input
+                  ref={inputRef}
                   type="text"
                   placeholder="Search by name, email, or phone..."
                   value={searchTerm}
@@ -96,13 +151,50 @@ export default function ConfirmAttendance() {
                       setSearchResults([]);
                     }
                   }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { handleSearch(); }
+                    if (e.key === 'Escape') { setShowSuggestions(false); }
+                  }}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 lg:py-5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base lg:text-lg text-gray-900 placeholder-gray-500 transition-all duration-300 hover:border-orange-300"
                 />
+                {isFetchingSuggestions && (
+                  <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
+
+              {/* Suggestions Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-orange-200 rounded-xl shadow-2xl overflow-hidden"
+                >
+                  {suggestions.map((attendee) => (
+                    <button
+                      key={attendee.id}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleSelectSuggestion(attendee)}
+                      className="w-full text-left px-4 py-3 hover:bg-orange-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0 flex items-center gap-3 group/item"
+                    >
+                      <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center group-hover/item:bg-orange-200 transition-colors">
+                        <User className="w-4 h-4 text-orange-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{attendee.fullName}</p>
+                        <p className="text-xs text-gray-500 truncate">{attendee.emailAddress} · {attendee.phoneNumber}</p>
+                      </div>
+                      {attendee.status === 'confirmed' && (
+                        <CheckCircle className="flex-shrink-0 w-4 h-4 text-green-500" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={isSearching || !searchTerm.trim()}
               className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 text-white font-bold py-3 sm:py-4 lg:py-5 px-4 sm:px-6 rounded-xl sm:rounded-2xl transition-all duration-300 uppercase tracking-wide shadow-lg hover:shadow-xl hover:scale-105 transform active:scale-95 text-sm sm:text-base"
             >

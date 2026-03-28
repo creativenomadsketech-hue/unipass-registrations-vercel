@@ -9,7 +9,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'confirm' | 'register'>('confirm');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 bg-orange-500/5 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
