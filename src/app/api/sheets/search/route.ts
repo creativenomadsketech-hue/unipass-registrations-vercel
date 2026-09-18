@@ -31,47 +31,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ results: [] });
     }
 
-    // 1. Clean and normalize row 1 headers
+    // Extract row 1 headers and normalize strings
     const headers = rows[0].map((h: string) => h.toString().trim().toLowerCase());
 
-    // 2. Helper for exact match OR keyword list
-    const getValueByExactOrKeywords = (row: string[], keywords: string[]) => {
-      // First try exact header match
-      let idx = headers.findIndex((h) => keywords.some((k) => h === k));
-      
-      // Fallback to partial match if exact isn't found
-      if (idx === -1) {
-        idx = headers.findIndex((h) => keywords.some((k) => h.includes(k)));
-      }
-
+    // Flexible helper to find columns by partial header keywords
+    const getValueByKeywords = (row: string[], keywords: string[]) => {
+      const idx = headers.findIndex((h) => keywords.some((k) => h.includes(k)));
       return idx !== -1 ? (row[idx] ?? '').toString().trim() : '';
     };
 
-    // 3. Map rows safely
     const allAttendees = rows.slice(1).map((row, idx) => {
       const rowNumber = (idx + 2).toString();
 
-      const email = getValueByExactOrKeywords(row, ['email address', 'email']);
-      const fullName = getValueByExactOrKeywords(row, ['full name', 'name']);
-      const phone = getValueByExactOrKeywords(row, ['phone number', 'phone', 'mobile']);
-      const course = getValueByExactOrKeywords(row, ['course of interest', 'course']);
-      const qualification = getValueByExactOrKeywords(row, ['highest academic qualification', 'qualification']);
-      const location = getValueByExactOrKeywords(row, ['where will you be attending from?', 'event location', 'location']);
-      const hearAbout = getValueByExactOrKeywords(row, ['how did you hear about us?', 'hear about us']);
+      const email = getValueByKeywords(row, ['email address', 'email']);
+      const fullName = getValueByKeywords(row, ['full name', 'name']);
+      const phone = getValueByKeywords(row, ['phone number', 'phone', 'mobile']);
+      const course = getValueByKeywords(row, ['course of interest', 'course', 'study']);
+      const qualification = getValueByKeywords(row, ['highest academic qualification', 'qualification', 'academic']);
       
-      // STRICT MATCH FOR STATUS COLUMN (Index lookup by exact header name 'status')
+      // Column H: "Who will be funding your studies while abroad?" -> "Self sponsored"
+      const hearAbout = getValueByKeywords(row, ['funding', 'hear', 'sponsor']);
+
+      // Column I: "Where will you be attending from ?" or Event Details -> "9/1/2027"
+      const location = getValueByKeywords(row, ['where will you be attending', 'attending from', 'location', 'event']);
+
+      // STRICT EXACT SEARCH: Column J -> "status" ("pending" / "confirmed")
       const statusIdx = headers.findIndex((h) => h === 'status');
       const rawStatus = statusIdx !== -1 ? (row[statusIdx] ?? '').toString().trim().toLowerCase() : '';
 
-      // STRICT MATCH FOR CONFIRMED AT COLUMN
-      const confirmedAtIdx = headers.findIndex((h) => 
+      // Column K: "attendanceConfirmedAt"
+      const confirmedAtIdx = headers.findIndex((h) =>
         h.replace(/\s+/g, '') === 'attendanceconfirmedat' || h === 'attendance confirmed at'
       );
       const confirmedAt = confirmedAtIdx !== -1 ? (row[confirmedAtIdx] ?? '').toString().trim() : undefined;
 
       return {
         id: rowNumber,
-        timestamp: row[0] || '',
+        timestamp: row[0] || '', // Column A: Registration timestamp
         emailAddress: email,
         fullName: fullName,
         phoneNumber: phone,
@@ -80,7 +76,7 @@ export async function POST(request: NextRequest) {
         eventLocation: location,
         hearAboutUs: hearAbout,
         status: rawStatus === 'confirmed' ? ('confirmed' as const) : ('pending' as const),
-        attendanceConfirmedAt: confirmedAt || undefined,
+        attendanceConfirmedAt: confirmedAt,
       };
     });
 

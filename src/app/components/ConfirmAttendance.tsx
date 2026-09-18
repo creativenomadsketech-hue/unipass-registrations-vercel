@@ -217,6 +217,7 @@ export default function ConfirmAttendance() {
       )}
 
       {/* Search Results with Formatted JSON Debug Output */}
+      {/* Search Results */}
       {searchResults.length > 0 && (
         <div className="mb-6 sm:mb-8">
           <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
@@ -226,67 +227,87 @@ export default function ConfirmAttendance() {
             {searchResults.map((attendee) => (
               <div
                 key={attendee.id}
-                className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                   <div className="flex-1">
                     <div className="flex items-center mb-3">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-orange-500/10 rounded-full blur-md"></div>
-                        <User className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 mr-2 sm:mr-3 relative z-10" />
-                      </div>
+                      <User className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 mr-2 sm:mr-3" />
                       <h4 className="text-lg sm:text-xl font-bold text-gray-900">
                         {attendee.fullName}
                       </h4>
                       {attendee.status === 'confirmed' && (
-                        <div className="relative ml-2 sm:ml-3">
-                          <div className="absolute inset-0 bg-green-500/10 rounded-full blur-md"></div>
-                          <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 relative z-10" />
+                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 ml-2" />
+                      )}
+                    </div>
+
+                    {/* Basic Contact Info */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
+                      <div className="flex items-center">
+                        <Mail className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+                        <span className="break-all">{attendee.emailAddress}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Phone className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+                        <span>{attendee.phoneNumber}</span>
+                      </div>
+                    </div>
+
+                    {/* Full Registration Details Grid */}
+                    <div className="bg-gray-50 rounded-xl p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm border border-gray-100">
+                      {attendee.courseOfInterest && (
+                        <div>
+                          <span className="font-semibold text-gray-500 block">Course:</span>
+                          <span className="text-gray-900 font-medium">{attendee.courseOfInterest}</span>
+                        </div>
+                      )}
+                      {attendee.highestAcademicQualification && (
+                        <div>
+                          <span className="font-semibold text-gray-500 block">Qualification:</span>
+                          <span className="text-gray-900 font-medium">{attendee.highestAcademicQualification}</span>
+                        </div>
+                      )}
+                      {attendee.eventLocation && (
+                        <div>
+                          <span className="font-semibold text-gray-500 block">Event:</span>
+                          <span className="text-gray-900 font-medium">{attendee.eventLocation}</span>
+                        </div>
+                      )}
+                      {attendee.hearAboutUs && (
+                        <div>
+                          <span className="font-semibold text-gray-500 block">Funding / Sponsor:</span>
+                          <span className="text-gray-900 font-medium">{attendee.hearAboutUs}</span>
+                        </div>
+                      )}
+                      {attendee.timestamp && (
+                        <div>
+                          <span className="font-semibold text-gray-500 block">Registered At:</span>
+                          <span className="text-gray-900 font-medium">{attendee.timestamp}</span>
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center mb-2">
-                      <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span className="text-gray-700 font-medium text-sm sm:text-base break-all">
-                        {attendee.emailAddress}
-                      </span>
-                    </div>
-                    <div className="flex items-center mb-2">
-                      <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span className="text-gray-700 font-medium text-sm sm:text-base">
-                        {attendee.phoneNumber}
-                      </span>
-                    </div>
                   </div>
-                  <div className="lg:ml-6 flex-shrink-0">
+
+                  {/* Confirmation Button */}
+                  <div className="lg:ml-6 flex-shrink-0 flex items-center">
                     {attendee.status === 'pending' ? (
                       <button
                         onClick={() => handleConfirmAttendance(attendee)}
                         disabled={confirmingId === attendee.id}
-                        className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform active:scale-95 text-sm sm:text-base"
+                        className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-400 text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md text-sm"
                       >
-                        <span className="flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                          {confirmingId === attendee.id ? (
-                            'Confirming...'
-                          ) : (
-                            <>
-                              <span className="hidden sm:inline">Confirm Attendance</span>
-                              <span className="sm:hidden">Confirm</span>
-                            </>
-                          )}
-                        </span>
+                        {confirmingId === attendee.id ? 'Confirming...' : 'Confirm Attendance'}
                       </button>
                     ) : (
-                      <span className="w-full lg:w-auto text-green-600 font-bold flex items-center justify-center bg-green-50 border border-green-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base">
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                      <span className="w-full lg:w-auto text-green-600 font-bold flex items-center justify-center bg-green-50 border border-green-200 px-4 py-2 rounded-xl text-sm">
+                        <CheckCircle className="w-4 h-4 mr-2" />
                         Confirmed
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* JSON UI Display Section */}
+                {/* JSON Object Data Output */}
                 {/* <div className="mt-4 bg-slate-900 border border-slate-800 rounded-xl p-4 text-left shadow-inner">
                   <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
                     Attendee JSON Object Data
