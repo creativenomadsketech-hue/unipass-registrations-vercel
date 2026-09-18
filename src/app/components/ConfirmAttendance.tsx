@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Search, User, Mail, Phone, CheckCircle, UserPlus } from 'lucide-react';
-import { searchAttendees, confirmAttendance, logAction } from '../services/googleSheets';
+import { CheckCircle, Mail, Phone, Search, User, UserPlus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { confirmAttendance, logAction, searchAttendees } from '../services/googleSheets';
 
 interface Attendee {
   id: string;
@@ -134,75 +134,76 @@ export default function ConfirmAttendance() {
       {/* Search Section */}
       <div className="mb-6 sm:mb-8">
         <div className="relative max-w-2xl mx-auto">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-orange-600/10 rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative">
-                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition-colors duration-300" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Search by name, email, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setSearchError(null);
-                    if (e.target.value.trim() === '') {
-                      setHasSearched(false);
-                      setSearchResults([]);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') { handleSearch(); }
-                    if (e.key === 'Escape') { setShowSuggestions(false); }
-                  }}
-                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 lg:py-5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base lg:text-lg text-gray-900 placeholder-gray-500 transition-all duration-300 hover:border-orange-300"
-                />
-                {isFetchingSuggestions && (
-                  <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-              </div>
-
-              {/* Suggestions Dropdown */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div
-                  ref={suggestionsRef}
-                  className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-orange-200 rounded-xl shadow-2xl overflow-hidden"
-                >
-                  {suggestions.map((attendee) => (
-                    <button
-                      key={attendee.id}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleSelectSuggestion(attendee)}
-                      className="w-full text-left px-4 py-3 hover:bg-orange-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0 flex items-center gap-3 group/item"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center group-hover/item:bg-orange-200 transition-colors">
-                        <User className="w-4 h-4 text-orange-500" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{attendee.fullName}</p>
-                        <p className="text-xs text-gray-500 truncate">{attendee.emailAddress} · {attendee.phoneNumber}</p>
-                      </div>
-                      {attendee.status === 'confirmed' && (
-                        <CheckCircle className="flex-shrink-0 w-4 h-4 text-green-500" />
-                      )}
-                    </button>
-                  ))}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-orange-600/10 rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative">
+              <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5 sm:w-6 sm:h-6 group-hover:text-orange-500 transition-colors duration-300" />
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Search by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setSearchError(null);
+                  if (e.target.value.trim() === '') {
+                    setHasSearched(false);
+                    setSearchResults([]);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { handleSearch(); }
+                  if (e.key === 'Escape') { setShowSuggestions(false); }
+                }}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 lg:py-5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base lg:text-lg text-gray-900 placeholder-gray-500 transition-all duration-300 hover:border-orange-300"
+              />
+              {isFetchingSuggestions && (
+                <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2">
+                  <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
             </div>
-            <button
-              onClick={() => handleSearch()}
-              disabled={isSearching || !searchTerm.trim()}
-              className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 text-white font-bold py-3 sm:py-4 lg:py-5 px-4 sm:px-6 rounded-xl sm:rounded-2xl transition-all duration-300 uppercase tracking-wide shadow-lg hover:shadow-xl hover:scale-105 transform active:scale-95 text-sm sm:text-base"
-            >
-              <span className="flex items-center justify-center">
-                <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                {isSearching ? 'Searching...' : 'Search Registration'}
-              </span>
-            </button>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-orange-200 rounded-xl shadow-2xl overflow-hidden"
+              >
+                {suggestions.map((attendee) => (
+                  <button
+                    key={attendee.id}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleSelectSuggestion(attendee)}
+                    className="w-full text-left px-4 py-3 hover:bg-orange-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0 flex items-center gap-3 group/item"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center group-hover/item:bg-orange-200 transition-colors">
+                      <User className="w-4 h-4 text-orange-500" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{attendee.fullName}</p>
+                      <p className="text-xs text-gray-500 truncate">{attendee.emailAddress} · {attendee.phoneNumber}</p>
+                    </div>
+                    {JSON.stringify(attendee)}
+                    {attendee.status === 'confirmed' && (
+                      <CheckCircle className="flex-shrink-0 w-4 h-4 text-green-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => handleSearch()}
+            disabled={isSearching || !searchTerm.trim()}
+            className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-600 disabled:to-gray-700 disabled:text-gray-400 text-white font-bold py-3 sm:py-4 lg:py-5 px-4 sm:px-6 rounded-xl sm:rounded-2xl transition-all duration-300 uppercase tracking-wide shadow-lg hover:shadow-xl hover:scale-105 transform active:scale-95 text-sm sm:text-base"
+          >
+            <span className="flex items-center justify-center">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              {isSearching ? 'Searching...' : 'Search Registration'}
+            </span>
+          </button>
         </div>
       </div>
 
