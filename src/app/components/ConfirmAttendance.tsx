@@ -77,13 +77,11 @@ export default function ConfirmAttendance() {
 
     setShowSuggestions(false);
     setSuggestions([]);
-    console.log('Starting search for:', query);
     setIsSearching(true);
     setHasSearched(true);
     setSearchError(null);
     try {
       const results = await searchAttendees(query);
-      console.log('Search results received:', results);
       setSearchResults(results);
       await logAction('search', { searchTerm: query, resultCount: results.length });
     } catch (error) {
@@ -106,12 +104,12 @@ export default function ConfirmAttendance() {
     try {
       const confirmedAttendee = await confirmAttendance(attendee.id);
       setSelectedAttendee(confirmedAttendee);
-      setSearchResults(prev => prev.map(a =>
-        a.id === attendee.id ? { ...a, status: 'confirmed' as const } : a
-      ));
+      setSearchResults((prev) =>
+        prev.map((a) => (a.id === attendee.id ? { ...a, status: 'confirmed' as const } : a))
+      );
       await logAction('attendance_confirmed', {
         attendeeId: attendee.id,
-        attendeeName: attendee.fullName
+        attendeeName: attendee.fullName,
       });
     } catch (error) {
       console.error('Confirmation failed:', error);
@@ -152,8 +150,8 @@ export default function ConfirmAttendance() {
                   }
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') { handleSearch(); }
-                  if (e.key === 'Escape') { setShowSuggestions(false); }
+                  if (e.key === 'Enter') handleSearch();
+                  if (e.key === 'Escape') setShowSuggestions(false);
                 }}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 className="w-full pl-10 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-4 lg:py-5 bg-white border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base lg:text-lg text-gray-900 placeholder-gray-500 transition-all duration-300 hover:border-orange-300"
@@ -182,10 +180,13 @@ export default function ConfirmAttendance() {
                       <User className="w-4 h-4 text-orange-500" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{attendee.fullName}</p>
-                      <p className="text-xs text-gray-500 truncate">{attendee.emailAddress} · {attendee.phoneNumber}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {attendee.fullName}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {attendee.emailAddress} · {attendee.phoneNumber}
+                      </p>
                     </div>
-                    {JSON.stringify(attendee)}
                     {attendee.status === 'confirmed' && (
                       <CheckCircle className="flex-shrink-0 w-4 h-4 text-green-500" />
                     )}
@@ -215,24 +216,28 @@ export default function ConfirmAttendance() {
         </div>
       )}
 
-      {/* Search Results */}
+      {/* Search Results with Formatted JSON Debug Output */}
       {searchResults.length > 0 && (
         <div className="mb-6 sm:mb-8">
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Search Results</h3>
+          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+            Search Results
+          </h3>
           <div className="space-y-4 sm:space-y-6">
             {searchResults.map((attendee) => (
               <div
                 key={attendee.id}
                 className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
                   <div className="flex-1">
                     <div className="flex items-center mb-3">
                       <div className="relative">
                         <div className="absolute inset-0 bg-orange-500/10 rounded-full blur-md"></div>
                         <User className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 mr-2 sm:mr-3 relative z-10" />
                       </div>
-                      <h4 className="text-lg sm:text-xl font-bold text-gray-900">{attendee.fullName}</h4>
+                      <h4 className="text-lg sm:text-xl font-bold text-gray-900">
+                        {attendee.fullName}
+                      </h4>
                       {attendee.status === 'confirmed' && (
                         <div className="relative ml-2 sm:ml-3">
                           <div className="absolute inset-0 bg-green-500/10 rounded-full blur-md"></div>
@@ -242,28 +247,15 @@ export default function ConfirmAttendance() {
                     </div>
                     <div className="flex items-center mb-2">
                       <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span className="text-gray-700 font-medium text-sm sm:text-base break-all">{attendee.emailAddress}</span>
+                      <span className="text-gray-700 font-medium text-sm sm:text-base break-all">
+                        {attendee.emailAddress}
+                      </span>
                     </div>
                     <div className="flex items-center mb-2">
                       <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span className="text-gray-700 font-medium text-sm sm:text-base">{attendee.phoneNumber}</span>
-                    </div>
-                    <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 bg-gray-50 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-gray-100">
-                      <p className="text-xs sm:text-sm text-gray-700">
-                        <span className="font-bold text-orange-500">Course:</span> {attendee.courseOfInterest}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-700">
-                        <span className="font-bold text-orange-500">Qualification:</span> {attendee.highestAcademicQualification}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-700">
-                        <span className="font-bold text-orange-500">Event:</span> {attendee.eventLocation}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-700">
-                        <span className="font-bold text-orange-500">How did you hear about the fair?:</span> {attendee.hearAboutUs || 'N/A'}
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        Registered: {attendee.timestamp}
-                      </p>
+                      <span className="text-gray-700 font-medium text-sm sm:text-base">
+                        {attendee.phoneNumber}
+                      </span>
                     </div>
                   </div>
                   <div className="lg:ml-6 flex-shrink-0">
@@ -275,7 +267,9 @@ export default function ConfirmAttendance() {
                       >
                         <span className="flex items-center justify-center">
                           <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                          {confirmingId === attendee.id ? 'Confirming...' : (
+                          {confirmingId === attendee.id ? (
+                            'Confirming...'
+                          ) : (
                             <>
                               <span className="hidden sm:inline">Confirm Attendance</span>
                               <span className="sm:hidden">Confirm</span>
@@ -291,6 +285,16 @@ export default function ConfirmAttendance() {
                     )}
                   </div>
                 </div>
+
+                {/* JSON UI Display Section */}
+                {/* <div className="mt-4 bg-slate-900 border border-slate-800 rounded-xl p-4 text-left shadow-inner">
+                  <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
+                    Attendee JSON Object Data
+                  </p>
+                  <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap break-all overflow-x-auto">
+                    {JSON.stringify(attendee, null, 2)}
+                  </pre>
+                </div> */}
               </div>
             ))}
           </div>
@@ -304,12 +308,15 @@ export default function ConfirmAttendance() {
             <div className="absolute inset-0 bg-orange-500/10 rounded-full blur-2xl"></div>
             <User className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 text-orange-500 relative z-10" />
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">No Registration Found</h3>
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+            No Registration Found
+          </h3>
           <p className="text-sm sm:text-base lg:text-xl text-gray-700 mb-6 sm:mb-8 max-w-md mx-auto px-4">
-            We couldn&apos;t find a registration matching your search. Would you like to register instead?
+            We couldn&apos;t find a registration matching your search. Would you like to register
+            instead?
           </p>
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => (window.location.href = '/')}
             className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg sm:rounded-xl transition-all duration-300 inline-flex items-center shadow-lg hover:shadow-xl hover:scale-105 transform active:scale-95 text-sm sm:text-base"
           >
             <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
@@ -325,9 +332,13 @@ export default function ConfirmAttendance() {
             <div className="absolute inset-0 bg-green-500/10 rounded-full blur-2xl"></div>
             <CheckCircle className="w-12 h-12 sm:w-16 sm:h-16 text-green-500 mx-auto relative z-10" />
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Attendance Confirmed!</h3>
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
+            Attendance Confirmed!
+          </h3>
           <p className="text-sm sm:text-base lg:text-xl text-gray-700">
-            Thank you, <span className="text-orange-500 font-bold">{selectedAttendee.fullName}</span>! Your attendance has been confirmed.
+            Thank you,{' '}
+            <span className="text-orange-500 font-bold">{selectedAttendee.fullName}</span>! Your
+            attendance has been confirmed.
           </p>
         </div>
       )}
